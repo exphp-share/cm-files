@@ -5,8 +5,10 @@ On remote systems that have Environment Modules installed (that's the thing with
 # Setup
 
 ```
-cp -a apps modulefiles $HOME
+cp -a apps modulefils $HOME
 ```
+
+(or, more likely, copy them to a location on a filesystem suitable for large, installed binaries, and then create symlinks at `$HOME/apps` and `$HOME/modulefiles`)
 
 # How to use
 
