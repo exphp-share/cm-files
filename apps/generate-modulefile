@@ -34,14 +34,17 @@ HERE
 
 has_libs () { find "$1" -name '*.so' -or -name '*.a' >/dev/null; }
 has_cheader () { find "$1" -name '*.h' >/dev/null; }
-prepend() { echo >>"$output" 'prepend-path       '"$1" || die "error modifying $1"; }
+prepend() {
+    echo >&2 "Found something for $1"
+    printf >>"$output" 'prepend-path       %-20s%s\n' "$1" "$2" || die "error modifying $1";
+}
 
-[[ -e $dir/bin   ]]                                 && { prepend 'PATH              $root/bin'           ; }
-[[ -e $dir/lib   ]]   && has_libs "$dir/lib"        && { prepend 'LIBRARY_PATH      $root/lib'           ; }
-[[ -e $dir/lib   ]]   && has_libs "$dir/lib"        && { prepend 'LD_LIBRARY_PATH   $root/lib'           ; }
-[[ -e $dir/lib64 ]]   && has_libs "$dir/lib64"      && { prepend 'LIBRARY_PATH      $root/lib64'         ; }
-[[ -e $dir/lib64 ]]   && has_libs "$dir/lib64"      && { prepend 'LD_LIBRARY_PATH   $root/lib64'         ; }
-[[ -e $dir/include ]] && has_cheader "$dir/include" && { prepend 'CPATH             $root/include'       ; }
-[[ -e $dir/share/man ]]                             && { prepend 'MANPATH           $root/share/man'     ; }
-[[ -e $dir/lib/pkgconfig ]]                         && { prepend 'PKG_CONFIG_PATH   $root/lib/pkgconfig' ; }
+[[ -e $dir/bin   ]]                                 && { prepend PATH              '$root/bin'           ; }
+[[ -e $dir/lib   ]]   && has_libs "$dir/lib"        && { prepend LIBRARY_PATH      '$root/lib'           ; }
+[[ -e $dir/lib   ]]   && has_libs "$dir/lib"        && { prepend LD_LIBRARY_PATH   '$root/lib'           ; }
+[[ -e $dir/lib64 ]]   && has_libs "$dir/lib64"      && { prepend LIBRARY_PATH      '$root/lib64'         ; }
+[[ -e $dir/lib64 ]]   && has_libs "$dir/lib64"      && { prepend LD_LIBRARY_PATH   '$root/lib64'         ; }
+[[ -e $dir/include ]] && has_cheader "$dir/include" && { prepend CPATH             '$root/include'       ; }
+[[ -e $dir/share/man ]]                             && { prepend MANPATH           '$root/share/man'     ; }
+[[ -e $dir/lib/pkgconfig ]]                         && { prepend PKG_CONFIG_PATH   '$root/lib/pkgconfig' ; }
 true
