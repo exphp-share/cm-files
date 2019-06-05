@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-APPS=/data/lampam/apps
-MODULEFILES=/data/lampam/modulefiles
+MODULEFILES=$(dirname $(readlink -f ${BASH_SOURCE[0]}))
+APPS=$(dirname $MODULEFILES)/apps
 
 (
     # komodo's bash doesn't have globstar support.
