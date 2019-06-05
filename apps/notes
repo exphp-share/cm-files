@@ -21,11 +21,13 @@ The `apps/<PACKAGE>/<VERSION>/modulefile` files are partially generated and part
     * use `generate-modulefile` to get a head start; this script will automatically check for certain directories and add path entries accordingly
     * look at the generated modulefile and see if anything is missing (in particular consider if there are any non-pathlike env vars that need to be set)
 
-`$HOME/modulefiles` contains an automatically generated tree of symlinks. Run:
+`$HOME/modulefiles` contains a tree of symlinks, which can be automatically generated from apps. Run:
 
 ```
 $HOME/modulefiles/update-links
 ```
+
+If you have any old, existing local install prefixes (e.g. `$HOME/.local`), feel free add your own modulefiles for them manually (you can even use `generate-modulefile`).  Regular files and valid symlinks won't be deleted by the script (it only clears broken symlinks).
 
 ## Reminder for packages that use `cmake`
 
