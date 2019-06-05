@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+
+APPS=/data/lampam/apps
+MODULEFILES=/data/lampam/modulefiles
+
+(
+    # komodo's bash doesn't have globstar support.
+    #
+    # The documentation on -L is a bit unclear, but thankfully it does what
+    # we want; if python/2 is a symlink to python/2.7.15, then two separate
+    # entries are written to stdout:
+    #   ./python/2/modulefile
+    #   ./python/2.7.15/modulefile
+    modulefiles=($(cd "$APPS" && find -L . -name modulefile | sed s_^\./__)) || exit 1
+    subdirs=()
+    for path in "${modulefiles[@]}"; do
+        if [ "$path" == "${path%/modulefile}" ]; then
+            echo >&2 "detected space in a modulefile path. Sorry, this script is helpless."
+            exit 1
+        fi
+        subdirs+=("${path%/modulefile}")
+    done
+
+    # Delete broken symlinks.
+    # (i.e. paths that `find` outputs with `-type l` even when using -L to follow symlinks) 
+    find -L "$MODULEFILES" -type l -exec echo 'Deleting {}' ';'
+    find -L "$MODULEFILES" -type l -delete
+
+    # Clean up empty dirs.
+    # (-depth ensures children are handled first, so this will detect and delete entire empty subtrees)
+    find "$MODULEFILES" -depth -type d -empty -delete
+
+    for path in "${subdirs[@]}"; do
+        mkdir -p "$(dirname "$MODULEFILES/$path")"
+        link=$MODULEFILES/$path
+        target=$APPS/$path/modulefile
+        [[ -e $link ]] || echo "Linking $link -> $target"
+        ln -sf "$target" "$link"
+    done
+)

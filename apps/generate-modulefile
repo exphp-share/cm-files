@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+
+[[ $# -eq 1 ]] || {
+    echo >&2 "Usage: $0 INSTALL_PREFIX"
+    echo >&2 "Generates a base modulefile by looking for conventional subdirectories"
+    exit 1
+}
+dir=$1
+
+warn() { echo >&2 "$(basename $0)"; exit 1; }
+die() { echo >&2 "$@"; exit 1; }
+
+[[ -d "$dir" ]] || die "$dir: Path is not a directory"
+
+output=$dir/modulefile
+if [[ -e $output ]]; then
+    echo >&2 "Writing to $dir/modulefile.gen to avoid clobbering the existing modulefile."
+    output=$dir/modulefile.gen
+fi
+
+cat >"$output" <<'HERE'
+#%Module -*- tcl -*-
+##
+## modulefile
+##
+proc ModulesHelp { } {
+  puts stderr "\tuser module"
+}
+module-whatis "user module"
+set root [file dirname [exec readlink -f $ModulesCurrentModulefile]]
+
+HERE
+[[ $? -eq 0 ]] || exit 1
+
+has_libs () { find "$1" -name '*.so' -or -name '*.a' >/dev/null; }
+has_cheader () { find "$1" -name '*.h' >/dev/null; }
+prepend() { echo >>"$output" 'prepend-path       '"$1" || die "error modifying $1"; }
+
+[[ -e $dir/bin   ]]                                 && { prepend 'PATH              $root/bin'           ; }
+[[ -e $dir/lib   ]]   && has_libs "$dir/lib"        && { prepend 'LIBRARY_PATH      $root/lib'           ; }
+[[ -e $dir/lib   ]]   && has_libs "$dir/lib"        && { prepend 'LD_LIBRARY_PATH   $root/lib'           ; }
+[[ -e $dir/lib64 ]]   && has_libs "$dir/lib64"      && { prepend 'LIBRARY_PATH      $root/lib64'         ; }
+[[ -e $dir/lib64 ]]   && has_libs "$dir/lib64"      && { prepend 'LD_LIBRARY_PATH   $root/lib64'         ; }
+[[ -e $dir/include ]] && has_cheader "$dir/include" && { prepend 'CPATH             $root/include'       ; }
+[[ -e $dir/share/man ]]                             && { prepend 'MANPATH           $root/share/man'     ; }
+[[ -e $dir/lib/pkgconfig ]]                         && { prepend 'PKG_CONFIG_PATH   $root/lib/pkgconfig' ; }
+true
