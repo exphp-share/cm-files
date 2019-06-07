@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-MODULEFILES=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
+# Dirname first so that 
+MODULEFILES=$(readlink -f "$(dirname "${BASH_SOURCE[0]}")")
 APPS=$(dirname "$MODULEFILES")/apps
 
 (
