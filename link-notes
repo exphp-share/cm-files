@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+
+VCS=$(dirname $(readlink -f "${BASH_SOURCE[0]}"))
+APPS=$HOME/apps
+
+mkdir -p "$VCS/notes"
+
+existing_notes=($(cd "$APPS" && find . -mindepth 2 -maxdepth 2 -name notes | sed "s|^\./||"))
+
+# move existing notes to here
+for note in "${existing_notes[@]}"; do
+    apps_path=$APPS/$note
+    vcs_path=$VCS/notes/${note%/notes}
+    [[ -L $apps_path ]] && continue
+
+    [[ -d $apps_path ]] && {
+        echo >&2 "Skipping $note because it is a directory!"
+        continue
+    }
+
+    [[ -e $vcs_path ]] && {
+        echo >&2 "Skipping $note because $vcs_path already exists!"
+        continue
+    }
+    echo "Moving $note to $vcs_path"
+    mv "$apps_path" "$vcs_path"
+done
+
+# remove links that point nowhere
+#for note in "${existing_notes[@]}"; do
+#    [[ -L $APPS/$note ]] || continue
+#
+#    target=$(readlink -f "$APPS/$note")
+#    [[ -e $target ]] && continue
+#
+#    echo "Deleting dead link $note -> $target"
+#    rm "$APPS/$note"
+#done
+
+# create relevant links
+for note in $(ls "$VCS/notes"); do
+    vcs_path=$VCS/notes/$note
+    apps_path=$APPS/$note/notes
+    [[ -e $apps_path ]] && continue
+    [[ -e $(dirname $apps_path) ]] || continue
+    echo "Linking $note/notes to VCS"
+    ln -s "$vcs_path" "$apps_path"
+done
+
+

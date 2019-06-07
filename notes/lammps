@@ -1,0 +1,39 @@
+Suitable for rsp2.
+
+Used `Makefile.g++_openmpi` as template
+
+Added `-DLAMMPS_EXCEPTIONS=1` to `LMP_INC` line
+
+```
+make yes-user-omp
+make yes-user-misc
+make yes-manybody
+```
+
+**Helper install script:** (place in `src`)
+```
+#!/usr/bin/env bash
+[[ $# -eq 2 ]] || {
+    echo >&2 "usage: ./install-for-rsp2 TARGET PREFIX"
+    echo >&2 ""
+    echo >&2 "Arguments:"
+    echo >&2 "     TARGET: The Makefile filename suffix."
+    echo >&2 "     PREFIX: Destination install dir."
+    exit 1
+}
+TARGET=$1
+PREFIX=$2
+
+make -j4 "$TARGET" || exit 1
+make -j4 "$TARGET" mode=shlib || exit 1
+
+mkdir -p "$PREFIX"/{lib,bin,include/lammps,share/lammps} || exit 1
+install -m rw-r--r-- "lmp_$TARGET"          "$PREFIX"/bin/lammps || exit 1
+install -m rw-r--r-- "liblammps_$TARGET.so" "$PREFIX"/lib/liblammps.so || exit 1
+install -m rw-r--r-- "library.h"            "$PREFIX"/include/lammps/library.h || exit 1
+
+SHARE=$PREFIX/share/lammps
+rm -rf "$SHARE/potentials" || exit 1
+mkdir -p "$SHARE" || exit 1
+cp -a ../potentials "$SHARE/potentials" || exit 1
+```
