@@ -1,0 +1,7 @@
+
+# Post-install steps
+
+Get rid of `bin/updatedb` and `bin/locate` after installation.
+
+* You don't want `locate` because it doesn't know about the existing locatedb used by /usr/bin/locate
+* You don't want to run `updatedb` because it tries to store persistent data in /var/tmp, which is tight on space.

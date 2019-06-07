@@ -13,3 +13,5 @@ cp -a apps modulefils $HOME
 # How to use
 
 Look at `$HOME/apps/notes.md`
+
+In addition there is the `link-notes` script here which moves any file at `$HOME/apps/*/notes` to here and creates symlinks for them, so that they can be easily shared across systems.

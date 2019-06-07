@@ -1,0 +1,21 @@
+
+# Building
+
+some additional flags are necessary to help some versions of Python (notably 3.7) find libffi. They should be written exactly as shown here (down to the inclusion or omission of spaces inside FLAGS arguments) as they may be parsed by (poorly written) flag-parsing hacks elsewhere in python's build system.
+
+```
+./configure --prefix=/home/lampam/apps/python/2.7.15 --enable-optimizations CPPFLAGS="-I $HOME/local-install/lib/libffi-3.2.1/include" LDFLAGS="-L$HOME/local-install/lib64"
+```
+
+# Post-processing
+
+* Delete the `bin/python` symlink.  Users should set an alias if they want to choose 2 or 3 as the default.
+* Update the symlink for `2` or `3` to point to the latest.
+
+# Where's Python 3?
+
+I built it before I decided to start using environment modules. Sorry!  It's in `/data/lampam/local-install`.
+
+# In hindsight
+
+I probably should have made separate directories `apps/python{2,3}` or `apps/python/{2,3}` so that you can write e.g. `module load python/2`

@@ -1,0 +1,5 @@
+Built using `--enable-languages=c,c++,fortran`.
+
+When building from source, run `<gcc-source>/contrib/download_dependencies.sh` first (preferably before even running `configure`).  It will make your life infinitely easier.
+
+So far I have managed to survive without adding symlinks for `cc -> gcc`, `c++ -> g++`, and `f95 -> gfortran`; instead, the `env` script sets the environment variables `CC`, `CXX`, and `FC` that most build systems seem to respect.

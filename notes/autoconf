@@ -1,0 +1,2 @@
+
+autoconf can't be moved from its install prefix because paths to various places in $PREFIX/share are stored in the scripts in $PREFIX/bin

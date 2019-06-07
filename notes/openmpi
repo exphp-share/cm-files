@@ -1,0 +1,34 @@
+In order to build with slurm support, you need to help it find pmi headers and libs.
+
+`slurm-headers` below is a package containing `include/slurm`, copied from the `slurm` subdirectory of the SLURM source tarball.
+
+```
+./configure \
+    --with-pmi=/home/lampam/apps/slurm-headers/2.2.4 \
+    --with-pmi-libdir=/cm/shared/apps/slurm/2.2.4/lib64 \
+    --prefix=/home/lampam/apps/openmpi/gcc/3.1.1/
+```
+
+Beware:  For version 3.1.1, when the ./configure script reports that it cannot find the files it is looking for, it says something like the following:
+
+```
+configure: WARNING: PMI support requested (via --with-pmi) but neither pmi.h
+configure: WARNING: nor pmi2.h were found under locations:
+configure: WARNING:     /usr/include/slurm
+configure: WARNING:     /usr/include/slurm/slurm
+configure: WARNING: Specified path: /usr/include/slurm
+configure: WARNING: OR neither libpmi nor libpmi2 were found under:
+configure: WARNING:     /usr/lib
+configure: WARNING:     /usr/lib64
+configure: WARNING: Specified path: /usr
+```
+
+Beware: This is a lie! These are not the directories it actually checked!  To figure out where it REALLY searched, look above at the standard `configure` messages:
+
+```
+checking for pmi.h in /usr/include/slurm/include... not found
+checking for pmi.h in /usr/include/slurm/include/slurm... not found
+checking for libpmi in /usr... not found
+checking for libpmi in /usr/lib64... found
+checking for PMI_Init in -lpmi... yes
+```

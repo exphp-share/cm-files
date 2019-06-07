@@ -1,0 +1,10 @@
+
+1.16 fails to build on komodo with
+
+```
+help2man: can't get `--help' info from automake-1.16                                                
+Try `--no-discard-stderr' if option outputs to stderr                                               
+make: *** [doc/automake-1.16.1] Error 2
+```
+
+this is due to an outdated perl, which I REALLY don't want to build.
