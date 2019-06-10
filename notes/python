@@ -1,11 +1,25 @@
 
 # Building
 
-some additional flags are necessary to help some versions of Python (notably 3.7) find libffi. They should be written exactly as shown here (down to the inclusion or omission of spaces inside FLAGS arguments) as they may be parsed by (poorly written) flag-parsing hacks elsewhere in python's build system.
+In order for pip to work, you need both SSL and libffi.
+
+## SSL
+
+For some reason, the SSL library installed on komodo and matisse doesn't seem to be intended to be available to users. (It's hidden under `/cm/local/apps` on matisse)
+
+Just build `openssl` on your own.  (make sure to check the notes for openssl!)
+
+## libffi
+
+Some additional flags are necessary to help some versions of Python (notably 3.7) find libffi. They should be written exactly as shown here (down to the inclusion or omission of spaces inside FLAGS arguments) as they may be parsed by (poorly written) flag-parsing hacks elsewhere in python's build system.
+
+(no, simply including these paths on `C_INCLUDE_PATH` and `LD_LIBRARY_PATH` is *not* sufficient!)
 
 ```
 ./configure --prefix=/home/lampam/apps/python/2.7.15 --enable-optimizations CPPFLAGS="-I $HOME/local-install/lib/libffi-3.2.1/include" LDFLAGS="-L$HOME/local-install/lib64"
 ```
+
+And don't forget to make sure libffi is available on `LD_LIBRARY_PATH` in addition to this!  Otherwise, after the `ctypes` module is built, it will fail when python tries to import it as a test (because it attempts to do so without using the above `LDFLAGS`).
 
 # Post-processing
 

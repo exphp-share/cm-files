@@ -1,0 +1,6 @@
+```
+DIR=$HOME/apps/openssl/1.1.1c
+./config --prefix=$DIR --openssldir=$DIR/etc/ssl
+```
+
+After install, copy over the contents from `/etc/ssl/certs` on any machine into the matching subdirectory of the install directory.
