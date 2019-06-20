@@ -1,43 +1,45 @@
 
-# Building
+# Python notes
 
-In order for pip to work, you need both SSL and libffi.
+Summary: *christ on a cracker...*
 
-You should also double-check that the following libraries are usable: (the system liblzma was not usable on Matisse, so I had to build `xz`)
+## Preparation work
 
-```
-gcc -lreadline -llzma -luuid -lbz2 -lz -ltermcap -lgdbm
-```
-
-(if it complains about a missing entry point, that's a success)
-
-## SSL
+### SSL
 
 For some reason, the SSL library installed on komodo and matisse doesn't seem to be intended to be available to users. (It's hidden under `/cm/local/apps` on matisse)
 
 Just build `openssl` on your own.  (make sure to check the notes for openssl!)
 
-## libffi
+### libffi and liblzma
 
-Some additional flags are necessary to help some versions of Python (notably 3.7) find libffi. They should be written exactly as shown here (down to the inclusion or omission of spaces inside FLAGS arguments) as they may be parsed by (poorly written) flag-parsing hacks elsewhere in python's build system.
+Some additional flags are necessary to help some versions of Python (notably 3.7) find libffi and lzma. They should be written exactly as shown here (down to the inclusion or omission of spaces inside FLAGS arguments) as they may be parsed by (poorly written) flag-parsing hacks elsewhere in python's build system.
 
 (no, simply including these paths on `C_INCLUDE_PATH` and `LD_LIBRARY_PATH` is *not* sufficient!)
 
 ```
-./configure --prefix=/home/lampam/apps/python/2.7.15 --enable-optimizations CPPFLAGS="-I $HOME/local-install/lib/libffi-3.2.1/include" LDFLAGS="-L$HOME/local-install/lib64"
+./configure --prefix=$HOME/apps/python/2.7.15 --enable-optimizations CPPFLAGS="-I $HOME/apps/libffi/3.2.1/lib/libffi-3.2.1/include" LDFLAGS="-L$HOME/apps/libffi/3.2.1/lib64 -L$HOME/apps/xz/5.2.4/lib"
 ```
 
-And don't forget to make sure libffi is available on `LD_LIBRARY_PATH` in addition to this!  Otherwise, after the `ctypes` module is built, it will fail when python tries to import it as a test (because it attempts to do so without using the above `LDFLAGS`).
+### Ensure libraries are available
 
-# Post-processing
+You should also double-check that the following libraries are in `LD_LIBRARY_PATH` before running `make`.  (even for `ffi` and `lzma`, despite the fact that you had to add extra flags for these earlier; when the makefile imports the compiled modules to test that compilation succeeded, those flags are not used!)
+
+```
+gcc -lffi -llzma -lreadline -luuid -lbz2 -lz -ltermcap -lgdbm
+```
+
+(if it complains about a missing entry point, that's a success)
+
+## Post-processing
 
 * Delete the `bin/python` symlink.  Users should set an alias if they want to choose 2 or 3 as the default.
 * Update the symlink for `2` or `3` to point to the latest.
 
-# Where's Python 3?
+## Where's Python 3 on komodo?
 
 I built it before I decided to start using environment modules. Sorry!  It's in `/data/lampam/local-install`.
 
-# In hindsight
+## In hindsight
 
 I probably should have made separate directories `apps/python{2,3}` or `apps/python/{2,3}` so that you can write e.g. `module load python/2`
