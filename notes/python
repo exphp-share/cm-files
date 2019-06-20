@@ -3,6 +3,14 @@
 
 In order for pip to work, you need both SSL and libffi.
 
+You should also double-check that the following libraries are usable: (the system liblzma was not usable on Matisse, so I had to build `xz`)
+
+```
+gcc -lreadline -llzma -luuid -lbz2 -lz -ltermcap -lgdbm
+```
+
+(if it complains about a missing entry point, that's a success)
+
 ## SSL
 
 For some reason, the SSL library installed on komodo and matisse doesn't seem to be intended to be available to users. (It's hidden under `/cm/local/apps` on matisse)
