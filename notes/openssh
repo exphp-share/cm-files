@@ -1,0 +1,28 @@
+## Specifying SSL location
+
+`openssh`'s configure script only checks the default install location for SSL, so you must specify `--with-ssl-dir` if you want to use a locally installed SSL implementation.
+
+```sh
+module load openssl
+./configure --prefix=$HOME/apps/openssh/8.1p1 --sysconfdir=$HOME/apps/openssh/8.1p1/etc/ssh --with-ssl-dir=/home/lampam/apps/openssl/1.1.1c/
+```
+
+## `/var/empty` and `sshd` errors
+
+Before you install, you'll want to comment out this line from the `install-files:` rule in `Makefile`: (I don't see any option in `configure` to disable it The Right Way!)
+```txt
+    $(MKDIR_P) -m 0755 $(DESTDIR)$(PRIVSEP_PATH)
+```
+Basically this line attempts to create a directory at `/var/empty` which is supposed to be empty and owned by `root`.  Of course, such a directory already exists on any system with a system ssh installation, so we do not need to make it ourselves.
+
+(to my understanding, ssh will be mad if this directory is not owned by root, because the purpose of the directory is to be a chroot that removes all filesystem capabilities.  That is why I suggest removing this line rather than overriding the path with `--with-privsep-path`.)
+
+When you install, you'll also see the following non-fatal error:
+
+```
+/home/lampam/apps/openssh/8.1p1/sbin/sshd -t -f /home/lampam/apps/openssh/8.1p1/etc/ssh/sshd_config
+make: /home/lampam/apps/openssh/8.1p1/sbin/sshd: Command not found
+make: [check-config] Error 127 (ignored)
+```
+
+and if you check after the install, you'll see that indeed, it never installed sshd!  This is hardly a problem however since a regular user has no business running sshd anyways.
