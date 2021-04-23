@@ -7,7 +7,7 @@ On remote systems that have Environment Modules installed (that's the thing with
 ```
 mkdir $HOME/apps $HOME/modulefiles
 ln -sf $(pwd)/generate-modulefile $HOME/apps/generate-modulefile
-ln -sf $(pwd)/update-links $HOME/modulefiles/update-links
+ln -sf $(pwd)/update-links $HOME/apps/update-links
 ```
 
 ## How to use
@@ -34,7 +34,7 @@ The `apps/<PACKAGE>/<VERSION>/modulefile` files are partially generated and part
 `$HOME/modulefiles` contains a tree of symlinks, which can be automatically generated from apps. Run:
 
 ```
-$HOME/modulefiles/update-links
+$HOME/apps/update-links
 ```
 
 If you have any old, existing local install prefixes (e.g. `$HOME/.local`), feel free add your own modulefiles for them manually (you can even use `generate-modulefile`).  Regular files and valid symlinks won't be deleted by the script (it only clears broken symlinks).
