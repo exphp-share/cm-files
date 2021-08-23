@@ -1,26 +1,84 @@
 #!/usr/bin/env bash
 
+PROG=$(basename $0)
+warn() { echo >&2 "$@"; }
+die() {
+    [[ $# -gt 0 ]] && warn "$@";
+    exit 1;
+}
+
+OPTS_SHORT='hl:'
+OPTS_LONG='help,lang:'
+print_usage() {
+    echo "Usage: $0 INSTALL_PREFIX [OPTIONS...]"
+    echo "Generates a base modulefile by looking for conventional subdirectories."
+}
+print_help() {
+    print_usage
+    cat <<HERE
+
+ARGUMENTS
+  INSTALL_PREFIX   The prefix where a package was installed, which likely has
+                   like subdirectories like bin/, lib/ and/or include/.
+                   This is also where the modulefile will be placed.
+
+OPTIONS
+  -l, --lang=LANG  Modulefile language.  Choices:
+                     tcl:  Make a legacy TCL Environment Module. (file will be
+                           called 'modulefile')
+                     lua:  Make a Lua module for Lmod. (file will be called
+                           'modulefile.lua')
+                     auto: [default] Choose based on the output of `module -v`.
+HERE
+}
+
+TEMP=$(getopt -o hl: --long help,lang: -n '$PROG' -- "$@")
+[ $? != 0 ] && die
+eval set -- "$TEMP"
+
+lang=auto
+force=
+while [ $# -ne 0 ]; do
+    case "$1" in
+        -h|--help) print_help; exit 0; shift;;
+        -l|--lang) lang=$2; shift 2;;
+        [?]) print_usage >&2; exit 1;;
+        --) shift; break;;
+    esac
+done
+
 [[ $# -eq 1 ]] || {
-    echo >&2 "Usage: $0 INSTALL_PREFIX"
-    echo >&2 "Generates a base modulefile by looking for conventional subdirectories"
+    print_usage >&2
     exit 1
 }
 dir=$1
 
-warn() { echo >&2 "$(basename $0)"; exit 1; }
-die() { echo >&2 "$@"; exit 1; }
+# =============================================================================
+# validate args
 
-[[ -d "$dir" ]] || die "$dir: Path is not a directory"
+detect_language() {
+    if ! which module >/dev/null 2>&1; then
+        die "'module' command not available; please specify --lang."
+    fi
+    if module -v 2>&1 | grep 'based on Lua' >/dev/null; then
+        echo lua
+    else
+        echo tcl
+    fi
+}
 
-# detect LMod vs TMod.  Ideally this script would also have an option like --lang=tcl to override this...
-if module -v 2>&1 | grep 'based on Lua' >/dev/null; then
-    LANG=lua
-else
-    LANG=tcl
+if [[ $lang != lua && $lang != tcl && $lang != auto ]]; then
+    die "bad lang: $lang"
+fi
+if [[ $lang == auto ]]; then
+    lang=$(detect_language) || exit 1
 fi
 
+[[ -d "$dir" ]] || die "$dir: Path is not a directory"
+dir_absolute=$(readlink -f "$dir")
+
 output=$dir/modulefile
-if [[ $LANG == lua ]]; then
+if [[ $lang == lua ]]; then
     output=$output.lua
 fi
 if [[ -e $output ]]; then
@@ -28,8 +86,11 @@ if [[ -e $output ]]; then
     echo >&2 "Writing to $output to avoid clobbering the existing modulefile."
 fi
 
-if [[ $LANG == tcl ]]; then
-    cat >"$output" <<'HERE'
+# =============================================================================
+# run
+
+if [[ $lang == tcl ]]; then
+    cat >"$output" <<HERE
 #%Module -*- tcl -*-
 ##
 ## modulefile
@@ -38,19 +99,19 @@ proc ModulesHelp { } {
   puts stderr "\tuser module"
 }
 module-whatis "user module"
-set root [file dirname [exec readlink -f $ModulesCurrentModulefile]]
+set root "$dir_absolute"
 
 HERE
     [[ $? -eq 0 ]] || exit 1
 
-elif [[ $LANG == lua ]]; then
-    cat >"$output" <<'HERE'
+elif [[ $lang == lua ]]; then
+    # NOTE: We avoid myModuleFileName in case the file is used via dofile()
+    cat >"$output" <<HERE
 function shell(str)
-  return string.gsub(subprocess(str), '%s*$', '')
+  return string.gsub(subprocess(str), '%s*\$', '')
 end
 
-local truePath = shell("readlink -f '"..myFileName().."'")
-local root = shell("dirname '"..truePath.."'")
+local root = "$dir_absolute"
 
 local version = myModuleVersion()
 
@@ -66,7 +127,7 @@ HERE
     [[ $? -eq 0 ]] || exit 1
 
 else
-    echo >&2 "bad lang: $LANG"
+    echo >&2 "bad lang: $lang"
     exit 1
 fi
 
@@ -74,12 +135,12 @@ has_libs () { find "$1" -name '*.so' -or -name '*.a' >/dev/null; }
 has_cheader () { find "$1" -name '*.h' >/dev/null; }
 prepend() {
     echo >&2 "Found something for $1"
-    if [[ $LANG == tcl ]]; then
+    if [[ $lang == tcl ]]; then
         printf >>"$output" 'prepend-path      %-20s $root/%s\n' "$1" "$2" || die "error modifying $1";
-    elif [[ $LANG == lua ]]; then
+    elif [[ $lang == lua ]]; then
         printf >>"$output" 'prepend_path(%-20s, pathJoin(root, %s))\n' "'$1'" "'$2'" || die "error modifying $1";
     else
-        echo >&2 "bad lang: $LANG"
+        echo >&2 "bad lang: $lang"
         exit 1
     fi
 }
