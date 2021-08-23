@@ -12,13 +12,24 @@ die() { echo >&2 "$@"; exit 1; }
 
 [[ -d "$dir" ]] || die "$dir: Path is not a directory"
 
-output=$dir/modulefile
-if [[ -e $output ]]; then
-    echo >&2 "Writing to $dir/modulefile.gen to avoid clobbering the existing modulefile."
-    output=$dir/modulefile.gen
+# detect LMod vs TMod.  Ideally this script would also have an option like --lang=tcl to override this...
+if module -v 2>&1 | grep 'based on Lua'; then
+    LANG=lua
+else
+    LANG=tcl
 fi
 
-cat >"$output" <<'HERE'
+output=$dir/modulefile
+if [[ $LANG == lua ]]; then
+    output=$output.lua
+fi
+if [[ -e $output ]]; then
+    output=$output.gen
+    echo >&2 "Writing to $output to avoid clobbering the existing modulefile."
+fi
+
+if [[ $LANG == tcl ]]; then
+    cat >"$output" <<'HERE'
 #%Module -*- tcl -*-
 ##
 ## modulefile
@@ -30,21 +41,55 @@ module-whatis "user module"
 set root [file dirname [exec readlink -f $ModulesCurrentModulefile]]
 
 HERE
-[[ $? -eq 0 ]] || exit 1
+    [[ $? -eq 0 ]] || exit 1
+
+elif [[ $LANG == lua ]]; then
+    cat >"$output" <<'HERE'
+function shell(str)
+  return string.gsub(subprocess(str), '%s*$', '')
+end
+
+local truePath = shell("readlink -f '"..myFileName().."'")
+local root = shell("dirname '"..truePath.."'")
+
+local version = myModuleVersion()
+
+local pkgName = myModuleFullName()
+local hierA = hierarchyA(pkgName, 1)
+
+logUsage(pkgName)
+
+whatis("Description: user module")
+whatis(string.format("Version: %s", version))
+
+HERE
+    [[ $? -eq 0 ]] || exit 1
+
+else
+    echo >&2 "bad lang: $LANG"
+    exit 1
+fi
 
 has_libs () { find "$1" -name '*.so' -or -name '*.a' >/dev/null; }
 has_cheader () { find "$1" -name '*.h' >/dev/null; }
 prepend() {
     echo >&2 "Found something for $1"
-    printf >>"$output" 'prepend-path       %-20s%s\n' "$1" "$2" || die "error modifying $1";
+    if [[ $LANG == tcl ]]; then
+        printf >>"$output" 'prepend-path      %-20s $root/%s\n' "$1" "$2" || die "error modifying $1";
+    elif [[ $LANG == lua ]]; then
+        printf >>"$output" 'prepend_path(%-20s, pathJoin(root, %s))\n' "'$1'" "'$2'" || die "error modifying $1";
+    else
+        echo >&2 "bad lang: $LANG"
+        exit 1
+    fi
 }
 
-[[ -e $dir/bin   ]]                                 && { prepend PATH              '$root/bin'           ; }
-[[ -e $dir/lib   ]]   && has_libs "$dir/lib"        && { prepend LIBRARY_PATH      '$root/lib'           ; }
-[[ -e $dir/lib   ]]   && has_libs "$dir/lib"        && { prepend LD_LIBRARY_PATH   '$root/lib'           ; }
-[[ -e $dir/lib64 ]]   && has_libs "$dir/lib64"      && { prepend LIBRARY_PATH      '$root/lib64'         ; }
-[[ -e $dir/lib64 ]]   && has_libs "$dir/lib64"      && { prepend LD_LIBRARY_PATH   '$root/lib64'         ; }
-[[ -e $dir/include ]] && has_cheader "$dir/include" && { prepend CPATH             '$root/include'       ; }
-[[ -e $dir/share/man ]]                             && { prepend MANPATH           '$root/share/man'     ; }
-[[ -e $dir/lib/pkgconfig ]]                         && { prepend PKG_CONFIG_PATH   '$root/lib/pkgconfig' ; }
+[[ -e $dir/bin   ]]                                 && { prepend PATH              'bin'           ; }
+[[ -e $dir/lib   ]]   && has_libs "$dir/lib"        && { prepend LIBRARY_PATH      'lib'           ; }
+[[ -e $dir/lib   ]]   && has_libs "$dir/lib"        && { prepend LD_LIBRARY_PATH   'lib'           ; }
+[[ -e $dir/lib64 ]]   && has_libs "$dir/lib64"      && { prepend LIBRARY_PATH      'lib64'         ; }
+[[ -e $dir/lib64 ]]   && has_libs "$dir/lib64"      && { prepend LD_LIBRARY_PATH   'lib64'         ; }
+[[ -e $dir/include ]] && has_cheader "$dir/include" && { prepend CPATH             'include'       ; }
+[[ -e $dir/share/man ]]                             && { prepend MANPATH           'share/man'     ; }
+[[ -e $dir/lib/pkgconfig ]]                         && { prepend PKG_CONFIG_PATH   'lib/pkgconfig' ; }
 true
