@@ -13,7 +13,7 @@ die() { echo >&2 "$@"; exit 1; }
 [[ -d "$dir" ]] || die "$dir: Path is not a directory"
 
 # detect LMod vs TMod.  Ideally this script would also have an option like --lang=tcl to override this...
-if module -v 2>&1 | grep 'based on Lua'; then
+if module -v 2>&1 | grep 'based on Lua' >/dev/null; then
     LANG=lua
 else
     LANG=tcl
