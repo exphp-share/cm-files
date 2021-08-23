@@ -56,8 +56,14 @@ dir=$1
 # =============================================================================
 # validate args
 
+callable() {
+    which "$1" >/dev/null 2>&1 && return 0
+    [[ $(type -t "$1") == 'function' ]] && return 0
+    false
+}
+
 detect_language() {
-    if ! which module >/dev/null 2>&1; then
+    if ! callable 'module'; then
         die "'module' command not available; please specify --lang."
     fi
     if module -v 2>&1 | grep 'based on Lua' >/dev/null; then
